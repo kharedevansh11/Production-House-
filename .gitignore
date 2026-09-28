@@ -1,0 +1,17 @@
+pipeline/.env
+pipeline/smaug/
+openshorts/
+hypit/
+pipeline/data/angles.json
+pipeline/data/state.json
+pipeline/data/supervisor.jsonl
+pipeline/data/ready/**
+pipeline/data/runs/**
+!pipeline/data/ready/.gitkeep
+!pipeline/data/runs/.gitkeep
+pipeline/template/.hypit/
+pipeline/template/reel.svml
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
