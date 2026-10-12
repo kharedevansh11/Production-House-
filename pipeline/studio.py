@@ -245,7 +245,8 @@ def make_quiz(kind: dict, script_text: str, run_id: str, work: Path, cfg: dict) 
     item_seconds = [q + GAP + DING + a + PAUSE for _, q, _, a in spoken]
     # the "Part 1" intro is the longest one a reel can get, so it bounds every part
     longest_intro = media.speak(f"{title} · Part 1. How many can you get right?", voice, speed, work / "intro-probe.wav", cfg)
-    ranges = quiz_parts(item_seconds, longest_intro + PAUSE + outro_seconds, float(cfg.get("short_max_seconds", 50)))
+    # 0.5 s margin: the AAC encoder pads a few frames onto the end
+    ranges = quiz_parts(item_seconds, longest_intro + PAUSE + outro_seconds, float(cfg.get("short_max_seconds", 50)) - 0.5)
 
     files = {}
     for number, (first, last) in enumerate(ranges, 1):
