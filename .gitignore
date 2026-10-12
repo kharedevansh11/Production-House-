@@ -1,4 +1,5 @@
 pipeline/.env
+pipeline/studio/.env
 pipeline/smaug/
 openshorts/
 hypit/

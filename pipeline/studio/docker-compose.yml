@@ -1,0 +1,84 @@
+# Sandbox stack on smaug. Run from this folder inside the repo clone; see pipeline/studio/README.md.
+name: amrit-studio
+
+networks:
+  amrit_sandbox:
+    external: true
+
+services:
+  kokoro:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
+    container_name: amrit-kokoro
+    networks: [amrit_sandbox]
+    mem_limit: 2g
+    cpus: 4
+    restart: unless-stopped
+
+  acestep:
+    build:
+      context: https://github.com/ace-step/ACE-Step-1.5.git
+    image: amrit-acestep:local
+    container_name: amrit-acestep
+    networks: [amrit_sandbox]
+    environment:
+      - ACESTEP_MODE=api
+      - ACESTEP_CONFIG_PATH=acestep-v15-turbo
+      - ACESTEP_INIT_LLM=false
+      - ACESTEP_LLM_BACKEND=pt
+      - ACESTEP_OFFLOAD_TO_CPU=true
+      # The image is built on CUDA 12.8, which has no GTX 1050 kernels, so the song model runs on the CPU.
+      - ACESTEP_DEVICE=cpu
+    volumes:
+      - /mnt/ssd-ext/amrit/data/studio/acestep-checkpoints:/app/checkpoints
+      - /mnt/ssd-ext/amrit/data/studio/hf-cache:/root/.cache/huggingface
+    shm_size: 2gb
+    mem_limit: 9g
+    restart: unless-stopped
+
+  sadtalker:
+    build: ./sadtalker
+    image: amrit-sadtalker:local
+    container_name: amrit-sadtalker
+    networks: [amrit_sandbox]
+    gpus: all
+    environment:
+      - SADTALKER_SIZE=256
+      # Set to 1 if the GPU runs out of memory; much slower but works.
+      - SADTALKER_CPU=0
+    volumes:
+      - /mnt/ssd-ext/amrit/data/studio/work:/work
+    shm_size: 1gb
+    mem_limit: 6g
+    restart: unless-stopped
+
+  web:
+    image: nginx:alpine
+    container_name: amrit-studio-web
+    networks: [amrit_sandbox]
+    ports:
+      - "9103:80"
+    volumes:
+      - /mnt/ssd-ext/amrit/data/studio/public:/usr/share/nginx/html:ro
+    mem_limit: 128m
+    restart: unless-stopped
+
+  # One-shot job, not a server: docker compose run --rm studio python studio.py rhyme --script /work/in/x.txt
+  studio:
+    build:
+      context: ..
+      dockerfile: studio/Dockerfile
+    image: amrit-studio:local
+    container_name: amrit-studio
+    profiles: [job]
+    networks: [amrit_sandbox]
+    gpus: all
+    # HF_TOKEN goes in pipeline/studio/.env: ai4bharat/indic-parler-tts is gated (accept its terms on Hugging Face once).
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ..:/app/pipeline
+      - /mnt/ssd-ext/amrit/data/studio/work:/work
+      - /mnt/ssd-ext/amrit/data/studio/public:/srv/studio
+      - /mnt/ssd-ext/amrit/data/studio/hf-cache:/root/.cache/huggingface
+    mem_limit: 8g

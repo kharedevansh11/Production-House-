@@ -163,6 +163,10 @@ ExecStart=/path/to/Openshots/pipeline/.venv/bin/python orchestrator.py
 
 Leave the timer off until that manual pass succeeds.
 
+## Studio: full videos, reels, and Hindi household reels on the NAS
+
+`pipeline/studio.py` is a separate command that runs entirely on a home server. It makes Hindi household reels with talking AI characters, rapid-fire quiz reels, did-you-know facts, creepy stories, and sung nursery rhymes. Every reel is 50 seconds or less, and finished videos are served on the LAN for watching or downloading. It needs no Hypit, no OpenShorts, and no API keys. Setup and commands: [pipeline/studio/README.md](pipeline/studio/README.md).
+
 ## License
 
 The pipeline in this repository is MIT. See [LICENSE](LICENSE).

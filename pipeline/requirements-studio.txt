@@ -1,0 +1,10 @@
+# studio.py. torch is installed first from the CUDA 12.6 index in studio/Dockerfile (keeps GTX 10xx support).
+# parler-tts pins transformers==4.46.1, so diffusers and peft stay on releases from that period.
+httpx>=0.27
+PyYAML>=6
+diffusers>=0.32,<0.33
+peft==0.13.2
+accelerate>=1.1,<1.3
+parler-tts @ git+https://github.com/huggingface/parler-tts.git
+soundfile>=0.12
+faster-whisper>=1.1

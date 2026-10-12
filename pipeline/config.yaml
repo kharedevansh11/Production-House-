@@ -32,3 +32,30 @@ openshorts:
 upload_post:
   profile: "default"
   api_base: "https://api.upload-post.com"
+# studio.py: full video + vertical shorts, published on the NAS. Hostnames are
+# container names on the amrit_sandbox Docker network (see studio/docker-compose.yml).
+studio:
+  ollama_url: "http://amrit-ollama:11434/v1"
+  # gemma3:12b got ~95% of quiz facts right vs ~70% for qwen2.5:7b; slower (~3 min per script) but fits the 11 GB Ollama cap.
+  ollama_model: "gemma3:12b"
+  kokoro_url: "http://amrit-kokoro:8880/v1"
+  acestep_url: "http://amrit-acestep:8001"
+  sadtalker_url: "http://amrit-sadtalker:8000"
+  sadtalker_timeout_seconds: 3600
+  # ghar reels: Hindi voices and photoreal faces
+  hindi_tts_model: "ai4bharat/indic-parler-tts"
+  hindi_tts_device: "cpu"
+  realistic_image_model: "stablediffusionapi/realistic-vision-v51"
+  song_timeout_seconds: 5400
+  whisper_model: "base"
+  # Any Stable Diffusion 1.5 checkpoint on Hugging Face works; a cartoon fine-tune suits the kids use cases.
+  image_model: "stable-diffusion-v1-5/stable-diffusion-v1-5"
+  image_lora: "latent-consistency/lcm-lora-sdv1-5"
+  image_steps: 6
+  # Use float32 if pictures come out black on the GTX 1050.
+  image_dtype: "float16"
+  short_max_seconds: 50
+  short_min_seconds: 12
+  work_dir: "/work"
+  publish_dir: "/srv/studio"
+  public_url: "http://192.168.1.30:9103"
