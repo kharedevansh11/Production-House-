@@ -73,7 +73,7 @@ KINDS = {
         "or facts you are certain are true.",
     },
     "ghar": {
-        "about": "Hindi household reel: AI family members talk on camera",
+        "about": "Hindi household reel: family members' portraits, Hindi voices, Hinglish captions",
         "audio": "ghar",
         "trend": "subreddit:indiasocial family",
         "write": "Write one short, funny, relatable scene from a middle-class Indian home, the kind Hindi Instagram reels go viral with: "
@@ -329,7 +329,7 @@ def make_ghar(script_text: str, run_id: str, work: Path, cfg: dict) -> dict:
 
     segments = []
     for index, (line, wav, length) in enumerate(zip(lines, wavs, seconds)):
-        clip = media.talk(face_of[line["who"]], wav, work / f"talk{index:02d}.mp4", cfg)
+        clip = media.scene_clip(face_of[line["who"]], length, index % 2 == 0, work / f"face{index:02d}.mp4", size=(920, 1150))
         subs = media.card_ass(chars[line["who"]]["name"], line.get("text") or line["hi"], length, work / f"line{index:02d}.ass")
         segments.append(media.card_segment(room, clip, wav, subs, length, work / f"seg{index:02d}.mp4"))
     reel = media.concat(segments, work / "reel.mp4")

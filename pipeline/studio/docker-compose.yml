@@ -35,22 +35,6 @@ services:
     mem_limit: 9g
     restart: unless-stopped
 
-  sadtalker:
-    build: ./sadtalker
-    image: amrit-sadtalker:local
-    container_name: amrit-sadtalker
-    networks: [amrit_sandbox]
-    gpus: all
-    environment:
-      - SADTALKER_SIZE=256
-      # Set to 1 if the GPU runs out of memory; much slower but works.
-      - SADTALKER_CPU=0
-    volumes:
-      - /mnt/ssd-ext/amrit/data/studio/work:/work
-    shm_size: 1gb
-    mem_limit: 6g
-    restart: unless-stopped
-
   web:
     image: nginx:alpine
     container_name: amrit-studio-web

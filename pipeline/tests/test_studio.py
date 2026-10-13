@@ -190,13 +190,8 @@ class EndToEndTests(unittest.TestCase):
                 paths.append(path)
             return paths
 
-        def fake_talk(face, audio, out, cfg):
-            media.run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-i", str(face), "-i", str(audio), "-shortest",
-                       "-c:v", "libx264", "-pix_fmt", "yuv420p", str(out)])
-            return out
-
         patches = {(studio, "unload_ollama"): lambda cfg: None, (studio, "log"): lambda *a, **k: None,
-                   (media, "speak_hindi"): fake_speak_hindi, (media, "paint"): fake_paint, (media, "talk"): fake_talk}
+                   (media, "speak_hindi"): fake_speak_hindi, (media, "paint"): fake_paint}
         saved = {key: getattr(*key) for key in patches}
         for (module, name), fn in patches.items():
             setattr(module, name, fn)

@@ -117,7 +117,10 @@ def paint(prompts: list[str], negative: str, out_dir: Path, cfg: dict, seed: int
     pipe.load_lora_weights(cfg["image_lora"])
     pipe.fuse_lora()
     pipe.enable_attention_slicing()
-    pipe.enable_model_cpu_offload()
+    if torch.cuda.is_available():
+        pipe.enable_model_cpu_offload()  # keeps SD 1.5 inside the 4 GB GTX 1050
+    else:
+        pipe.to("mps" if torch.backends.mps.is_available() else "cpu")
     paths = []
     for index, prompt in enumerate(prompts):
         path = out_dir / f"{prefix}{index:02d}.png"
@@ -132,7 +135,8 @@ def paint(prompts: list[str], negative: str, out_dir: Path, cfg: dict, seed: int
         ).images[0].save(path)
         paths.append(path)
     del pipe
-    torch.cuda.empty_cache()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     return paths
 
 
@@ -172,7 +176,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     return out
 
 
-def scene_clip(image: Path, seconds: float, zoom_in: bool, out: Path) -> Path:
+def scene_clip(image: Path, seconds: float, zoom_in: bool, out: Path, size: tuple[int, int] = FULL) -> Path:
     """Ken Burns on one still. Upscale first so zoompan does not jitter."""
     frames = max(1, int(round(seconds * FPS)))
     zoom = "min(1.0+0.12*on/{n},1.12)" if zoom_in else "max(1.12-0.12*on/{n},1.0)"
@@ -180,8 +184,8 @@ def scene_clip(image: Path, seconds: float, zoom_in: bool, out: Path) -> Path:
         [
             "ffmpeg", "-y", "-loglevel", "error", "-i", str(image),
             "-vf",
-            f"scale=2880:1620:force_original_aspect_ratio=increase,crop=2880:1620,"
-            f"zoompan=z='{zoom.format(n=frames)}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s={FULL[0]}x{FULL[1]}:fps={FPS}",
+            f"scale={size[0] * 3 // 2}:{size[1] * 3 // 2}:force_original_aspect_ratio=increase,crop={size[0] * 3 // 2}:{size[1] * 3 // 2},"
+            f"zoompan=z='{zoom.format(n=frames)}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s={size[0]}x{size[1]}:fps={FPS}",
             "-frames:v", str(frames), "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", str(out),
         ]
     )
@@ -404,19 +408,6 @@ def tempo(path: Path, factor: float) -> Path:
     return path
 
 
-def talk(face: Path, audio: Path, out: Path, cfg: dict) -> Path:
-    """SadTalker service: a still portrait plus speech becomes a talking-head clip. Paths are shared via /work."""
-    response = httpx.post(
-        cfg["sadtalker_url"].rstrip("/") + "/talk",
-        json={"image": str(face), "audio": str(audio), "out": str(out)},
-        timeout=float(cfg.get("sadtalker_timeout_seconds", 3600)),
-    )
-    response.raise_for_status()
-    if not out.is_file():
-        raise RuntimeError(f"SadTalker returned no video: {response.text[:400]}")
-    return out
-
-
 def card_ass(name: str, text: str, seconds: float, out: Path) -> Path:
     width, height = SHORT
 
@@ -445,7 +436,7 @@ Dialogue: 0,{ass_time(0)},{ass_time(seconds)},Line,,0,0,0,,{clean(text)}
 
 
 def card_segment(background: Path, clip: Path, audio: Path, subs: Path, seconds: float, out: Path) -> Path:
-    """One spoken line: blurred room behind, the talking face in front, name on top, Hinglish caption below."""
+    """One spoken line: blurred room behind, the speaker's portrait slowly zooming in front, name on top, Hinglish caption below."""
     graph = (
         f"[0:v]scale={SHORT[0]}:{SHORT[1]}:force_original_aspect_ratio=increase,crop={SHORT[0]}:{SHORT[1]},"
         f"boxblur=6:1,eq=brightness=-0.10[bg];"

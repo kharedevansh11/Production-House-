@@ -4,7 +4,7 @@
 
 | Use case | Command | Audio | Pictures |
 |----------|---------|-------|----------|
-| Hindi household reel, AI family members talk on camera | `ghar` | Indic Parler-TTS Hindi (Divya, Rani, Rohit, Aman) | photoreal faces animated by SadTalker; Hinglish captions |
+| Hindi household reel, AI family members talk on camera | `ghar` | Indic Parler-TTS Hindi (Divya, Rani, Rohit, Aman) | a photoreal portrait of whoever is speaking, slowly zooming; Hinglish captions |
 | Nursery rhyme, sung | `rhyme` | ACE-Step 1.5 sings your lyrics | 3D cartoon |
 | Short creepy story | `scary` | Kokoro `bm_george` | dark cinematic |
 | Did-you-know facts | `facts` | Kokoro `am_michael` | documentary photo |
@@ -29,38 +29,28 @@ For `facts`, `quiz` and `ghar`, write a draft first. A `ghar` draft is JSON: edi
 4. **Video.** ffmpeg adds a Ken Burns zoom to each still, lays them over the audio and burns in the captions. Each short shows the scene on a blurred background with large captions.
 5. **Publish.** Files go to `/mnt/ssd-ext/amrit/data/studio/public/<run>/`, together with an `index.html` page. nginx serves that folder on port 9103.
 
-## One-time setup on smaug
+## Setup and running: one file
+
+`studio.sh` does everything. Run it from any laptop on the home network that can SSH into smaug as `keeper`; it logs in and runs itself there. You can also run it on smaug directly.
 
 ```bash
-ssh keeper@192.168.1.30
-mkdir -p /mnt/ssd-ext/amrit/projects /mnt/ssd-ext/amrit/data/studio/{work/in,public,hf-cache,acestep-checkpoints}
-cd /mnt/ssd-ext/amrit/projects
-git clone https://github.com/AmriteshKhare/Production-House-.git
-docker exec amrit-ollama ollama pull gemma3:12b   # already pulled on smaug
+curl -fsSLO https://raw.githubusercontent.com/kharedevansh11/Production-House-/studio-pipeline/pipeline/studio/studio.sh
 
-cd Production-House-/pipeline/studio
-echo 'HF_TOKEN=hf_...' > .env       # Hugging Face read token; first accept the terms at huggingface.co/ai4bharat/indic-parler-tts
-docker compose up -d --build          # amrit-kokoro, amrit-acestep, amrit-sadtalker, amrit-studio-web (:9103)
-docker compose --profile job build    # amrit-studio job image (torch cu126, diffusers, ffmpeg)
+bash studio.sh                                 # first time: install and start everything (20-40 min); re-run to update
+bash studio.sh quiz --topic "human body"       # make a video; prints the links when done
+bash studio.sh ghar --draft                    # write a Hindi household scene to check first
+bash studio.sh ghar --script /work/in/ghar-<run>.json
+bash studio.sh status                          # what is running, latest log lines
 ```
 
-The first run downloads the models into `/mnt/ssd-ext/amrit/data/studio/`: about 2 GB for SD 1.5, and several GB for ACE-Step.
+On the first run it asks once for a free Hugging Face token, which the Hindi voice model needs. Accept the terms at https://huggingface.co/ai4bharat/indic-parler-tts, then create a "read" token at https://huggingface.co/settings/tokens. The token is stored in `pipeline/studio/.env`, which git ignores.
 
-## Make a video
+Renders run in a detached container, so closing the SSH window does not stop them. Everything is listed at `http://192.168.1.30:9103`. Drafts are saved in `/mnt/ssd-ext/amrit/data/studio/work/in/` on smaug.
 
-```bash
-cd /mnt/ssd-ext/amrit/projects/Production-House-/pipeline/studio
-nano /mnt/ssd-ext/amrit/data/studio/work/in/twinkle.txt      # paste the lyrics
-docker compose run --rm studio python studio.py rhyme --script /work/in/twinkle.txt
-```
-
-The command prints the page link and one link per file. `http://192.168.1.30:9103` lists every video made so far.
-
-Rhyme lyrics can use ACE-Step section tags on their own lines (`[verse]`, `[chorus]`). The tags are removed from the captions.
 
 ## Limits of this hardware
 
-- **`ghar` is slow on purpose.** Indic Parler-TTS runs on the CPU, and SadTalker runs at 256 px on the GTX 1050. Expect roughly 30–90 minutes per reel; that's fine for an overnight queue. If SadTalker runs out of GPU memory, set `SADTALKER_CPU=1` in `docker-compose.yml`.
+- **`ghar` takes a while.** Indic Parler-TTS runs on the CPU: expect roughly 10–20 minutes per reel.
 - **Faces are generated, not real people.** Instagram asks for an "AI info" label on realistic synthetic people, so turn it on when posting.
 
 - **No text-to-video model.** Wan 2.2 and LTX-Video need at least 6–8 GB of VRAM, and the GTX 1050 has 4 GB. Motion comes from animated stills, which is also how most rhyme channels are made. If the GPU is upgraded to 8 GB or more, `media.paint` and `media.scene_clip` are the two functions to replace with Wan 2.2 TI2V-5B.

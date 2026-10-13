@@ -165,7 +165,7 @@ Leave the timer off until that manual pass succeeds.
 
 ## Studio: full videos, reels, and Hindi household reels on the NAS
 
-`pipeline/studio.py` is a separate command that runs entirely on a home server. It makes Hindi household reels with talking AI characters, rapid-fire quiz reels, did-you-know facts, creepy stories, and sung nursery rhymes. Every reel is 50 seconds or less, and finished videos are served on the LAN for watching or downloading. It needs no Hypit, no OpenShorts, and no API keys. Setup and commands: [pipeline/studio/README.md](pipeline/studio/README.md).
+`pipeline/studio.py` is a separate command that runs entirely on a home server. It makes Hindi household reels (AI family portraits, Hindi voices, Hinglish captions), rapid-fire quiz reels, did-you-know facts, creepy stories, and sung nursery rhymes. Every reel is 50 seconds or less, and finished videos are served on the LAN for watching or downloading. It needs no Hypit, no OpenShorts, and no API keys. Setup and commands: [pipeline/studio/README.md](pipeline/studio/README.md).
 
 ## License
 

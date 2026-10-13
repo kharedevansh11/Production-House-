@@ -40,8 +40,6 @@ studio:
   ollama_model: "gemma3:12b"
   kokoro_url: "http://amrit-kokoro:8880/v1"
   acestep_url: "http://amrit-acestep:8001"
-  sadtalker_url: "http://amrit-sadtalker:8000"
-  sadtalker_timeout_seconds: 3600
   # ghar reels: Hindi voices and photoreal faces
   hindi_tts_model: "ai4bharat/indic-parler-tts"
   hindi_tts_device: "cpu"
